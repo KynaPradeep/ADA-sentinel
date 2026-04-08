@@ -28,10 +28,9 @@ Last-mile delivery accounts for 53% of total logistics costs. Every failed deliv
 | Infrastructure | Docker + GitHub Actions |
 
 ## Project Structure
-swiftlane/
-├── frontend/     # Next.js dispatcher dashboard
-├── backend/      # Node.js orchestrator + REST APIs
-└── ml/           # Python risk scoring microservice
+├── frontend/     
+├── backend/      
+└── ml/           
 
 ## Features
 
