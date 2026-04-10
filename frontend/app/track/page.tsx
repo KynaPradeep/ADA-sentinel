@@ -1,12 +1,26 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { deliveries } from "../../lib/mockData";
+import { deliveries, authHelpers } from "../../lib/mockData";
 
 export default function Track() {
   const router = useRouter();
   const [selected, setSelected] = useState<typeof deliveries[0] | null>(null);
+  const [checked, setChecked] = useState(false);
   const myDeliveries = deliveries.slice(0, 4);
+
+  useEffect(() => {
+    const role = authHelpers.getRole();
+    if (!role) { router.push("/login"); return; }
+    if (role !== "customer") {
+      if (role === "dispatcher") router.push("/dashboard");
+      else router.push("/driver");
+      return;
+    }
+    setChecked(true);
+  }, []);
+
+  if (!checked) return null;
 
   const riskColor = (s: number) => s > 75 ? "#f87171" : s > 50 ? "#fbbf24" : "#4ade80";
   const statusColor = (s: string) => s === "delivered" ? "#4ade80" : s === "failed" ? "#f87171" : "#fbbf24";
@@ -23,7 +37,6 @@ export default function Track() {
         .del-card:hover{border-color:rgba(34,197,94,0.4) !important;transform:translateY(-1px)}
       `}</style>
 
-      {/* Navbar */}
       <nav style={{ padding: "0 32px", height: "60px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(10,26,15,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(34,197,94,0.1)", position: "sticky", top: 0, zIndex: 100 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }} onClick={() => router.push("/")}>
           <div style={{ width: "28px", height: "28px", background: "#15803d", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -32,8 +45,11 @@ export default function Track() {
           <span style={{ fontWeight: 800, fontSize: "16px" }}><span style={{ color: "#fff" }}>Swift</span><span style={{ color: "#4ade80" }}>Lane</span></span>
         </div>
         <div style={{ display: "flex", gap: "4px" }}>
-          {[{ label: "My Deliveries", active: true }].map((item) => (
-            <div key={item.label} style={{ padding: "6px 14px", borderRadius: "8px", fontSize: "13px", fontWeight: 500, color: item.active ? "#4ade80" : "rgba(255,255,255,0.4)", background: item.active ? "rgba(34,197,94,0.1)" : "transparent" }}>
+          {[
+            { label: "My Deliveries", href: "/track", active: true },
+            { label: "Settings", href: "/dashboard/settings", active: false },
+          ].map((item) => (
+            <div key={item.label} onClick={() => router.push(item.href)} style={{ padding: "6px 14px", borderRadius: "8px", fontSize: "13px", fontWeight: 500, color: item.active ? "#4ade80" : "rgba(255,255,255,0.4)", background: item.active ? "rgba(34,197,94,0.1)" : "transparent", cursor: "pointer" }}>
               {item.label}
             </div>
           ))}
@@ -43,7 +59,7 @@ export default function Track() {
             <div style={{ width: "6px", height: "6px", background: "#4ade80", borderRadius: "50%", animation: "pulse 1.5s infinite" }}/>
             <span style={{ fontSize: "11px", color: "#4ade80", fontWeight: 600 }}>Live</span>
           </div>
-          <div onClick={() => router.push("/dashboard/profile")} style={{ width: "34px", height: "34px", background: "#15803d", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+          <div onClick={() => router.push("/dashboard/settings")} style={{ width: "34px", height: "34px", background: "#15803d", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
             <span style={{ color: "#fff", fontSize: "12px", fontWeight: 700 }}>AR</span>
           </div>
         </div>
@@ -57,7 +73,6 @@ export default function Track() {
 
         <div style={{ display: "grid", gridTemplateColumns: selected ? "1fr 360px" : "1fr", gap: "16px" }}>
           <div>
-            {/* Active deliveries */}
             <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(34,197,94,0.15)", borderRadius: "16px", padding: "20px", marginBottom: "16px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
                 <div style={{ width: "28px", height: "28px", background: "rgba(34,197,94,0.1)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -67,13 +82,7 @@ export default function Track() {
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 {myDeliveries.map((d, i) => (
-                  <div key={d.id} onClick={() => setSelected(selected?.id === d.id ? null : d)} className="del-card" style={{
-                    background: selected?.id === d.id ? "rgba(34,197,94,0.08)" : "rgba(255,255,255,0.02)",
-                    border: `1px solid ${selected?.id === d.id ? "rgba(34,197,94,0.4)" : "rgba(255,255,255,0.06)"}`,
-                    borderLeft: `3px solid ${riskColor(d.riskScore)}`,
-                    borderRadius: "0 12px 12px 0", padding: "14px 16px", cursor: "pointer",
-                    transition: "all .15s", animation: `fadeUp ${.2 + i * .08}s ease both`
-                  }}>
+                  <div key={d.id} onClick={() => setSelected(selected?.id === d.id ? null : d)} className="del-card" style={{ background: selected?.id === d.id ? "rgba(34,197,94,0.08)" : "rgba(255,255,255,0.02)", border: `1px solid ${selected?.id === d.id ? "rgba(34,197,94,0.4)" : "rgba(255,255,255,0.06)"}`, borderLeft: `3px solid ${riskColor(d.riskScore)}`, borderRadius: "0 12px 12px 0", padding: "14px 16px", cursor: "pointer", transition: "all .15s", animation: `fadeUp ${.2 + i * .08}s ease both` }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                       <div>
                         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
@@ -98,7 +107,6 @@ export default function Track() {
               </div>
             </div>
 
-            {/* Live tracking placeholder */}
             <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(34,197,94,0.15)", borderRadius: "16px", overflow: "hidden" }}>
               <div style={{ padding: "14px 20px", borderBottom: "1px solid rgba(34,197,94,0.1)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <p style={{ fontSize: "14px", fontWeight: 700, color: "#fff" }}>Live Tracking</p>
@@ -111,7 +119,6 @@ export default function Track() {
             </div>
           </div>
 
-          {/* Side panel */}
           {selected && (
             <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: "16px", padding: "20px", animation: "slideIn .25s ease both", overflowY: "auto", maxHeight: "600px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>

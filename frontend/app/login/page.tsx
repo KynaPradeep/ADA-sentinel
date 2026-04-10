@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { authHelpers } from "../../lib/mockData";
 
 export default function Login() {
   const router = useRouter();
@@ -9,10 +10,28 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [error, setError] = useState("");
 
   function handleSubmit() {
-    if (role === "dispatcher") router.push("/dashboard");
-    else if (role === "driver") router.push("/driver");
+    setError("");
+    if (!email || !password) { setError("Please fill in all fields."); return; }
+    if (isLogin) {
+      const registered = authHelpers.getRegisteredRoles();
+      if (registered.includes(role)) {
+        authHelpers.login(role);
+        redirect(role);
+      } else {
+        setError(`No ${role} account found. Please sign up first.`);
+      }
+    } else {
+      authHelpers.signup(role);
+      redirect(role);
+    }
+  }
+
+  function redirect(r: string) {
+    if (r === "dispatcher") router.push("/dashboard");
+    else if (r === "driver") router.push("/driver");
     else router.push("/track");
   }
 
@@ -24,27 +43,27 @@ export default function Login() {
         *{box-sizing:border-box;margin:0;padding:0}
         input{background:rgba(255,255,255,0.05) !important;border:1px solid rgba(255,255,255,0.1) !important;color:#fff !important;border-radius:10px;padding:12px 14px;font-size:14px;width:100%;font-family:'Inter',sans-serif;transition:all .2s}
         input::placeholder{color:rgba(255,255,255,0.3) !important}
-        input:focus{outline:none;border-color:rgba(34,197,94,0.5) !important;background:rgba(34,197,94,0.05) !important}
-        .role-btn:hover{border-color:rgba(34,197,94,0.5) !important;background:rgba(34,197,94,0.08) !important}
-        .submit-btn:hover{background:#16a34a !important;transform:translateY(-1px);box-shadow:0 8px 24px rgba(21,128,61,0.4) !important}
+        input:focus{outline:none;border-color:rgba(34,197,94,0.5) !important}
+        .role-btn:hover{border-color:rgba(34,197,94,0.5) !important}
+        .submit-btn:hover{background:#16a34a !important;transform:translateY(-1px)}
       `}</style>
 
-      {/* Navbar */}
       <nav style={{ padding: "0 48px", height: "64px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid rgba(34,197,94,0.1)", background: "rgba(10,26,15,0.85)", backdropFilter: "blur(16px)" }}>
         <div onClick={() => router.push("/")} style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}>
           <div style={{ width: "32px", height: "32px", background: "#15803d", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M3 9l4 4 8-8" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </div>
-          <span style={{ fontWeight: 800, fontSize: "17px" }}>
-            <span style={{ color: "#fff" }}>Swift</span><span style={{ color: "#4ade80" }}>Lane</span>
-          </span>
+          <span style={{ fontWeight: 800, fontSize: "17px" }}><span style={{ color: "#fff" }}>Swift</span><span style={{ color: "#4ade80" }}>Lane</span></span>
         </div>
+        <button onClick={() => router.push("/")} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "7px 14px", color: "rgba(255,255,255,0.6)", fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          Back
+        </button>
       </nav>
 
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 24px" }}>
         <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(34,197,94,0.15)", borderRadius: "24px", padding: "40px", width: "100%", maxWidth: "440px", animation: "fadeUp .5s ease both", backdropFilter: "blur(12px)" }}>
 
-          {/* Logo */}
           <div style={{ textAlign: "center", marginBottom: "32px" }}>
             <div style={{ width: "52px", height: "52px", background: "#15803d", borderRadius: "16px", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", boxShadow: "0 0 24px rgba(21,128,61,0.4)" }}>
               <svg width="24" height="24" viewBox="0 0 18 18" fill="none"><path d="M3 9l4 4 8-8" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -57,19 +76,17 @@ export default function Login() {
             </p>
           </div>
 
-          {/* Toggle */}
           <div style={{ display: "flex", background: "rgba(255,255,255,0.05)", borderRadius: "12px", padding: "4px", marginBottom: "28px" }}>
             {["Login", "Sign Up"].map((t) => (
-              <button key={t} onClick={() => setIsLogin(t === "Login")} style={{
+              <button key={t} onClick={() => { setIsLogin(t === "Login"); setError(""); }} style={{
                 flex: 1, padding: "9px", border: "none", borderRadius: "9px", fontSize: "14px", fontWeight: 600, cursor: "pointer", transition: "all .2s",
                 background: (isLogin && t === "Login") || (!isLogin && t === "Sign Up") ? "#15803d" : "transparent",
-                color: (isLogin && t === "Login") || (!isLogin && t === "Sign Up") ? "#fff" : "rgba(255,255,255,0.4)",
+                color: "#fff",
                 boxShadow: (isLogin && t === "Login") || (!isLogin && t === "Sign Up") ? "0 2px 8px rgba(21,128,61,0.3)" : "none",
               }}>{t}</button>
             ))}
           </div>
 
-          {/* Role */}
           <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", fontWeight: 500, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.5px" }}>I am a</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "8px", marginBottom: "24px" }}>
             {[
@@ -77,7 +94,7 @@ export default function Login() {
               { value: "driver", label: "Driver", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> },
               { value: "dispatcher", label: "Dispatcher", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg> },
             ].map((r) => (
-              <button key={r.value} onClick={() => setRole(r.value)} className="role-btn" style={{
+              <button key={r.value} onClick={() => { setRole(r.value); setError(""); }} className="role-btn" style={{
                 padding: "12px 8px",
                 border: `1px solid ${role === r.value ? "rgba(34,197,94,0.6)" : "rgba(255,255,255,0.08)"}`,
                 borderRadius: "12px",
@@ -91,27 +108,25 @@ export default function Login() {
             ))}
           </div>
 
-          {/* Form */}
           <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "20px" }}>
-            {!isLogin && (
-              <input placeholder="Full name" value={name} onChange={(e) => setName(e.target.value)} />
-            )}
+            {!isLogin && <input placeholder="Full name" value={name} onChange={(e) => setName(e.target.value)} />}
             <input type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
             <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
 
-          <button onClick={handleSubmit} className="submit-btn" style={{
-            width: "100%", padding: "14px", background: "#15803d", color: "#fff",
-            border: "none", borderRadius: "12px", fontSize: "15px", fontWeight: 700,
-            cursor: "pointer", transition: "all .2s", boxShadow: "0 4px 16px rgba(21,128,61,0.3)",
-            letterSpacing: "-0.2px",
-          }}>
+          {error && (
+            <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: "8px", padding: "10px 14px", marginBottom: "16px" }}>
+              <p style={{ fontSize: "13px", color: "#f87171" }}>{error}</p>
+            </div>
+          )}
+
+          <button onClick={handleSubmit} className="submit-btn" style={{ width: "100%", padding: "14px", background: "#15803d", color: "#fff", border: "none", borderRadius: "12px", fontSize: "15px", fontWeight: 700, cursor: "pointer", transition: "all .2s", boxShadow: "0 4px 16px rgba(21,128,61,0.3)" }}>
             {isLogin ? "Login" : "Create Account"}
           </button>
 
           <p style={{ textAlign: "center", fontSize: "13px", color: "rgba(255,255,255,0.3)", marginTop: "16px" }}>
             {isLogin ? "Don't have an account? " : "Already have an account? "}
-            <span onClick={() => setIsLogin(!isLogin)} style={{ color: "#4ade80", fontWeight: 600, cursor: "pointer" }}>
+            <span onClick={() => { setIsLogin(!isLogin); setError(""); }} style={{ color: "#4ade80", fontWeight: 600, cursor: "pointer" }}>
               {isLogin ? "Sign Up" : "Login"}
             </span>
           </p>

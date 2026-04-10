@@ -1,12 +1,26 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { deliveries } from "../../lib/mockData";
+import { deliveries, authHelpers } from "../../lib/mockData";
 
 export default function Driver() {
   const router = useRouter();
   const [expanded, setExpanded] = useState<string | null>("DEL-001");
   const [marked, setMarked] = useState<string[]>([]);
+  const [checked, setChecked] = useState(false);
+
+  useEffect(() => {
+    const role = authHelpers.getRole();
+    if (!role) { router.push("/login"); return; }
+    if (role !== "driver") {
+      if (role === "dispatcher") router.push("/dashboard");
+      else router.push("/track");
+      return;
+    }
+    setChecked(true);
+  }, []);
+
+  if (!checked) return null;
 
   const riskColor = (s: number) => s > 75 ? "#f87171" : s > 50 ? "#fbbf24" : "#4ade80";
 
@@ -21,7 +35,6 @@ export default function Driver() {
         .mark-btn:hover{background:#16a34a !important;transform:translateY(-1px)}
       `}</style>
 
-      {/* Navbar */}
       <nav style={{ padding: "0 32px", height: "60px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(10,26,15,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(34,197,94,0.1)", position: "sticky", top: 0, zIndex: 100 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }} onClick={() => router.push("/")}>
           <div style={{ width: "28px", height: "28px", background: "#15803d", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -30,9 +43,12 @@ export default function Driver() {
           <span style={{ fontWeight: 800, fontSize: "16px" }}><span style={{ color: "#fff" }}>Swift</span><span style={{ color: "#4ade80" }}>Lane</span></span>
         </div>
         <div style={{ display: "flex", gap: "4px" }}>
-          {["Overview", "Settings"].map((item) => (
-            <div key={item} onClick={() => item === "Settings" && router.push("/dashboard/settings")} style={{ padding: "6px 14px", borderRadius: "8px", fontSize: "13px", fontWeight: 500, color: item === "Overview" ? "#4ade80" : "rgba(255,255,255,0.4)", background: item === "Overview" ? "rgba(34,197,94,0.1)" : "transparent", cursor: "pointer" }}>
-              {item}
+          {[
+            { label: "Overview", href: "/driver", active: true },
+            { label: "Settings", href: "/dashboard/settings", active: false },
+          ].map((item) => (
+            <div key={item.label} onClick={() => router.push(item.href)} style={{ padding: "6px 14px", borderRadius: "8px", fontSize: "13px", fontWeight: 500, color: item.active ? "#4ade80" : "rgba(255,255,255,0.4)", background: item.active ? "rgba(34,197,94,0.1)" : "transparent", cursor: "pointer" }}>
+              {item.label}
             </div>
           ))}
         </div>
@@ -59,11 +75,10 @@ export default function Driver() {
           <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.4)", marginTop: "4px" }}>Your assigned deliveries and optimized route</p>
         </div>
 
-        {/* Route map placeholder */}
         <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(34,197,94,0.15)", borderRadius: "16px", overflow: "hidden", marginBottom: "20px" }}>
           <div style={{ padding: "14px 20px", borderBottom: "1px solid rgba(34,197,94,0.1)", display: "flex", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.63 19.79 19.79 0 01.22 1.07 2 2 0 012.22 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-.64a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
               <p style={{ fontSize: "14px", fontWeight: 700, color: "#fff" }}>Optimized Route</p>
             </div>
             <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.05)", borderRadius: "6px", padding: "3px 8px" }}>Mapbox — pending</span>
@@ -71,10 +86,7 @@ export default function Driver() {
           <svg width="100%" height="160" viewBox="0 0 800 160" style={{ display: "block" }}>
             <rect width="800" height="160" fill="rgba(0,0,0,0.2)"/>
             <path d="M80 120 Q200 40 320 80 Q440 120 560 60 Q680 20 760 80" fill="none" stroke="rgba(34,197,94,0.3)" strokeWidth="2" strokeDasharray="8 6"/>
-            {[
-              { cx: 80, cy: 120 }, { cx: 320, cy: 80 },
-              { cx: 560, cy: 60 }, { cx: 760, cy: 80 },
-            ].map((p, i) => (
+            {[{ cx: 80, cy: 120 }, { cx: 320, cy: 80 }, { cx: 560, cy: 60 }, { cx: 760, cy: 80 }].map((p, i) => (
               <g key={i}>
                 <circle cx={p.cx} cy={p.cy} r="10" fill="rgba(34,197,94,0.15)" stroke="rgba(34,197,94,0.4)" strokeWidth="1"/>
                 <circle cx={p.cx} cy={p.cy} r="5" fill="#4ade80"/>
@@ -87,7 +99,6 @@ export default function Driver() {
           </svg>
         </div>
 
-        {/* Active deliveries */}
         <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(34,197,94,0.15)", borderRadius: "16px", padding: "20px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
             <div style={{ width: "28px", height: "28px", background: "rgba(34,197,94,0.1)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -97,12 +108,7 @@ export default function Driver() {
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {deliveries.map((d, i) => (
-              <div key={d.id} className="del-row" style={{
-                background: "rgba(255,255,255,0.02)", border: `1px solid ${expanded === d.id ? "rgba(34,197,94,0.3)" : "rgba(255,255,255,0.06)"}`,
-                borderLeft: `3px solid ${riskColor(d.riskScore)}`,
-                borderRadius: "0 12px 12px 0", overflow: "hidden",
-                transition: "all .15s", animation: `fadeUp ${.2 + i * .06}s ease both`
-              }}>
+              <div key={d.id} className="del-row" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${expanded === d.id ? "rgba(34,197,94,0.3)" : "rgba(255,255,255,0.06)"}`, borderLeft: `3px solid ${riskColor(d.riskScore)}`, borderRadius: "0 12px 12px 0", overflow: "hidden", transition: "all .15s", animation: `fadeUp ${.2 + i * .06}s ease both` }}>
                 <div onClick={() => setExpanded(expanded === d.id ? null : d.id)} style={{ padding: "14px 16px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "3px" }}>
@@ -124,16 +130,9 @@ export default function Driver() {
                       </div>
                     )}
                     <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
-                      <button style={{ padding: "8px 16px", background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", color: "rgba(255,255,255,0.5)", fontSize: "12px", fontWeight: 500, cursor: "pointer" }}>
-                        Details
-                      </button>
+                      <button style={{ padding: "8px 16px", background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", color: "rgba(255,255,255,0.5)", fontSize: "12px", fontWeight: 500, cursor: "pointer" }}>Details</button>
                       {!marked.includes(d.id) ? (
-                        <button onClick={() => setMarked([...marked, d.id])} className="mark-btn" style={{
-                          padding: "8px 16px", background: "#15803d", border: "none", borderRadius: "8px",
-                          color: "#fff", fontSize: "12px", fontWeight: 600, cursor: "pointer",
-                          display: "flex", alignItems: "center", gap: "6px", transition: "all .2s",
-                          boxShadow: "0 2px 8px rgba(21,128,61,0.3)"
-                        }}>
+                        <button onClick={() => setMarked([...marked, d.id])} className="mark-btn" style={{ padding: "8px 16px", background: "#15803d", border: "none", borderRadius: "8px", color: "#fff", fontSize: "12px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", transition: "all .2s", boxShadow: "0 2px 8px rgba(21,128,61,0.3)" }}>
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                           Mark Delivered
                         </button>

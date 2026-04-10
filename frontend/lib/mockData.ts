@@ -98,3 +98,41 @@ export const user = {
   company: "Swiftlane Operations",
   avatar: "AR",
 };
+
+export const authHelpers = {
+  login: (role: string) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("sl_role", role);
+      const existing = JSON.parse(localStorage.getItem("sl_registered_roles") || "[]");
+      localStorage.setItem("sl_registered_roles", JSON.stringify(existing));
+    }
+  },
+  signup: (role: string) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("sl_role", role);
+      const existing = JSON.parse(localStorage.getItem("sl_registered_roles") || "[]");
+      if (!existing.includes(role)) {
+        existing.push(role);
+        localStorage.setItem("sl_registered_roles", JSON.stringify(existing));
+      }
+    }
+  },
+  getRole: (): string | null => {
+    if (typeof window !== "undefined") return localStorage.getItem("sl_role");
+    return null;
+  },
+  getRegisteredRoles: (): string[] => {
+    if (typeof window !== "undefined") return JSON.parse(localStorage.getItem("sl_registered_roles") || "[]");
+    return [];
+  },
+  logout: () => {
+    if (typeof window !== "undefined") localStorage.removeItem("sl_role");
+  },
+  setDarkMode: (val: boolean) => {
+    if (typeof window !== "undefined") localStorage.setItem("sl_dark", val ? "1" : "0");
+  },
+  getDarkMode: (): boolean => {
+    if (typeof window !== "undefined") return localStorage.getItem("sl_dark") === "1";
+    return false;
+  },
+};
