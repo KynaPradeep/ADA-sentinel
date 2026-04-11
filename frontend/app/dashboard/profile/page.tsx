@@ -1,14 +1,82 @@
 "use client";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { user, deliveries } from "../../../lib/mockData";
+import { deliveries, authHelpers } from "../../../lib/mockData";
+
+// Per-role display config
+const ROLE_CONFIG: Record<string, {
+  label: string;
+  title: string;
+  company: string;
+  avatar: string;
+  name: string;
+  badge: string;
+  navLinks: { label: string; href: string }[];
+  overviewHref: string;
+}> = {
+  dispatcher: {
+    label: "Dispatcher",
+    title: "Senior Dispatcher",
+    company: "Swiftlane Operations",
+    avatar: "AR",
+    name: "Anwita R",
+    badge: "Dispatcher",
+    navLinks: [
+      { label: "Overview", href: "/dashboard" },
+      { label: "Deliveries", href: "/dashboard/deliveries" },
+      { label: "Analytics", href: "/dashboard/analytics" },
+      { label: "Settings", href: "/dashboard/settings" },
+    ],
+    overviewHref: "/dashboard",
+  },
+  driver: {
+    label: "Driver",
+    title: "Delivery Driver",
+    company: "Swiftlane Logistics",
+    avatar: "AR",
+    name: "Anwita R",
+    badge: "Driver",
+    navLinks: [
+      { label: "Overview", href: "/driver" },
+      { label: "Settings", href: "/dashboard/settings" },
+    ],
+    overviewHref: "/driver",
+  },
+  customer: {
+    label: "Customer",
+    title: "Customer Account",
+    company: "Swiftlane",
+    avatar: "AR",
+    name: "Anwita R",
+    badge: "Customer",
+    navLinks: [
+      { label: "My Deliveries", href: "/track" },
+      { label: "Settings", href: "/dashboard/settings" },
+    ],
+    overviewHref: "/track",
+  },
+};
 
 export default function Profile() {
   const router = useRouter();
+  const [role, setRole] = useState<string | null>(null);
+  const [checked, setChecked] = useState(false);
 
-  const delivered = deliveries.filter(d => d.status === "delivered").length;
-  const failed = deliveries.filter(d => d.status === "failed").length;
-  const inTransit = deliveries.filter(d => d.status === "in_transit").length;
-  const highRisk = deliveries.filter(d => d.riskScore > 75).length;
+  useEffect(() => {
+    const r = authHelpers.getRole();
+    if (!r) { router.push("/login"); return; }
+    setRole(r);
+    setChecked(true);
+  }, []);
+
+  if (!checked || !role) return null;
+
+  const cfg = ROLE_CONFIG[role] ?? ROLE_CONFIG.dispatcher;
+
+  const delivered  = deliveries.filter(d => d.status === "delivered").length;
+  const failed     = deliveries.filter(d => d.status === "failed").length;
+  const inTransit  = deliveries.filter(d => d.status === "in_transit").length;
+  const highRisk   = deliveries.filter(d => d.riskScore > 75).length;
 
   return (
     <main style={{ background: "#0a1a0f", minHeight: "100vh", fontFamily: "'Inter', sans-serif" }}>
@@ -18,29 +86,32 @@ export default function Profile() {
         *{box-sizing:border-box;margin:0;padding:0}
       `}</style>
 
-      {/* Navbar */}
+      {/* Navbar — links match the current role */}
       <nav style={{ padding: "0 32px", height: "60px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(10,26,15,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(34,197,94,0.1)", position: "sticky", top: 0, zIndex: 100 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }} onClick={() => router.push("/")}>
           <div style={{ width: "28px", height: "28px", background: "#15803d", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <svg width="14" height="14" viewBox="0 0 18 18" fill="none"><path d="M3 9l4 4 8-8" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </div>
-          <span style={{ fontWeight: 800, fontSize: "16px" }}><span style={{ color: "#fff" }}>Swift</span><span style={{ color: "#4ade80" }}>Lane</span></span>
+          <span style={{ fontWeight: 800, fontSize: "16px" }}>
+            <span style={{ color: "#fff" }}>Swift</span><span style={{ color: "#4ade80" }}>Lane</span>
+          </span>
         </div>
+
         <div style={{ display: "flex", gap: "4px" }}>
-          {[
-            { label: "Overview", href: "/dashboard" },
-            { label: "Deliveries", href: "/dashboard/deliveries" },
-            { label: "Analytics", href: "/dashboard/analytics" },
-            { label: "Settings", href: "/dashboard/settings" },
-          ].map((item) => (
-            <div key={item.label} onClick={() => router.push(item.href)} style={{ padding: "6px 14px", borderRadius: "8px", fontSize: "13px", fontWeight: 500, color: "rgba(255,255,255,0.4)", background: "transparent", cursor: "pointer" }}>
+          {cfg.navLinks.map((item) => (
+            <div
+              key={item.label}
+              onClick={() => router.push(item.href)}
+              style={{ padding: "6px 14px", borderRadius: "8px", fontSize: "13px", fontWeight: 500, color: "rgba(255,255,255,0.4)", background: "transparent", cursor: "pointer" }}
+            >
               {item.label}
             </div>
           ))}
         </div>
+
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <div style={{ width: "34px", height: "34px", background: "#15803d", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ color: "#fff", fontSize: "12px", fontWeight: 700 }}>{user.avatar}</span>
+            <span style={{ color: "#fff", fontSize: "12px", fontWeight: 700 }}>{cfg.avatar}</span>
           </div>
         </div>
       </nav>
@@ -50,17 +121,24 @@ export default function Profile() {
         {/* Profile header */}
         <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(34,197,94,0.15)", borderRadius: "20px", padding: "32px", marginBottom: "16px", display: "flex", alignItems: "center", gap: "24px" }}>
           <div style={{ width: "72px", height: "72px", background: "#15803d", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 0 24px rgba(21,128,61,0.4)" }}>
-            <span style={{ color: "#fff", fontSize: "24px", fontWeight: 800 }}>{user.avatar}</span>
+            <span style={{ color: "#fff", fontSize: "24px", fontWeight: 800 }}>{cfg.avatar}</span>
           </div>
           <div style={{ flex: 1 }}>
-            <h1 style={{ fontSize: "22px", fontWeight: 800, color: "#fff", letterSpacing: "-0.5px" }}>{user.name}</h1>
-            <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.5)", marginTop: "4px" }}>{user.role} · {user.company}</p>
+            <h1 style={{ fontSize: "22px", fontWeight: 800, color: "#fff", letterSpacing: "-0.5px" }}>{cfg.name}</h1>
+            {/* Role-aware title and company */}
+            <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.5)", marginTop: "4px" }}>{cfg.title} · {cfg.company}</p>
             <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
-              <span style={{ fontSize: "11px", color: "#4ade80", background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: "6px", padding: "3px 10px", fontWeight: 600 }}>Dispatcher</span>
+              {/* Role-aware badge */}
+              <span style={{ fontSize: "11px", color: "#4ade80", background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: "6px", padding: "3px 10px", fontWeight: 600 }}>
+                {cfg.badge}
+              </span>
               <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", background: "rgba(255,255,255,0.05)", borderRadius: "6px", padding: "3px 10px" }}>Active</span>
             </div>
           </div>
-          <button onClick={() => router.push("/dashboard/settings")} style={{ padding: "10px 20px", background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: "10px", color: "#4ade80", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
+          <button
+            onClick={() => router.push("/dashboard/settings")}
+            style={{ padding: "10px 20px", background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: "10px", color: "#4ade80", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}
+          >
             Edit Profile
           </button>
         </div>
@@ -68,10 +146,10 @@ export default function Profile() {
         {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "12px", marginBottom: "16px" }}>
           {[
-            { label: "Delivered", value: delivered, color: "#4ade80" },
+            { label: "Delivered",  value: delivered, color: "#4ade80" },
             { label: "In Transit", value: inTransit, color: "#60a5fa" },
-            { label: "High Risk", value: highRisk, color: "#f87171" },
-            { label: "Failed", value: failed, color: "#fb923c" },
+            { label: "High Risk",  value: highRisk,  color: "#f87171" },
+            { label: "Failed",     value: failed,    color: "#fb923c" },
           ].map((s, i) => (
             <div key={i} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "14px", padding: "16px", textAlign: "center" }}>
               <p style={{ fontSize: "28px", fontWeight: 800, color: s.color, letterSpacing: "-1px" }}>{s.value}</p>
@@ -80,11 +158,11 @@ export default function Profile() {
           ))}
         </div>
 
-        {/* Recent deliveries */}
+        {/* Recent activity */}
         <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(34,197,94,0.15)", borderRadius: "16px", padding: "20px" }}>
           <p style={{ fontSize: "14px", fontWeight: 700, color: "#fff", marginBottom: "16px" }}>Recent Activity</p>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            {deliveries.map((d, i) => (
+            {deliveries.map((d) => (
               <div key={d.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "10px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                   <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: d.status === "delivered" ? "#4ade80" : d.status === "failed" ? "#f87171" : "#fbbf24", flexShrink: 0 }}/>
@@ -101,6 +179,7 @@ export default function Profile() {
             ))}
           </div>
         </div>
+
       </div>
     </main>
   );
